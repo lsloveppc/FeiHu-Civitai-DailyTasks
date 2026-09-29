@@ -1,0 +1,42 @@
+# civitai-daily 配置示例
+# 复制到 data/config.yaml，或直接跑 `civitai-daily init` 生成。
+# 也可以全部留空，用环境变量覆盖：CIVITAI_SITE / CIVITAI_COOKIE
+
+# 站点。civitai.red 与 civitai.com 是 Civitai 的两个官方主域名，后端同源。
+site: https://civitai.red
+
+# Cookie 优先级：cookie 字段 > cookie_file > data/cookies.txt
+# 推荐直接跑 `civitai-daily login`，或用面板右下角粘贴。
+cookie: ""
+cookie_file: ""
+
+user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+proxy: ""
+timeout: 30.0
+headless: false
+
+# 自我保护型限速。Civitai 官方对站内 Buzz 刷取有风控策略，
+# 默认值刻意保守：宁可慢，不要把账号玩死。
+limits:
+  max_likes: 20          # 每日点赞上限
+  max_follows: 10        # 每日关注上限
+  max_browses: 30        # 每日浏览上限
+  min_delay: 2.0         # 请求间最小随机间隔（秒）
+  max_delay: 5.0         # 请求间最大随机间隔（秒）
+  max_runtime_seconds: 600
+  retries: 2
+
+# 任务开关。开关名对应 civitai_daily/tasks.py 的 TASKS 注册表。
+tasks:
+  login_reward: true     # buzz.claimDailyBoostReward —— 每日奖励领取（真端点）
+  earn_potential: true   # buzz.getEarnPotential —— 今日收益潜力（官方任务进度）
+  challenge_daily: true  # challenge.getDaily —— 每日挑战列表（匿名可读）
+  react_images: true     # reaction.toggle 点赞图片
+  react_models: false    # 点赞模型（需显式指定模型 ID，默认关）
+  follow_creators: true  # user.toggleFollow 关注创作者
+  browse: true           # 浏览图片/模型，驱动站内活跃度
+
+# Web 面板
+web:
+  host: 127.0.0.1
+  port: 8787

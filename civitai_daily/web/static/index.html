@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>绯狐C站日常任务</title>
+<link rel="icon" href="/favicon.png">
+<style>
+  /* 配色参考 shadcn/ui 与 Linear 的深色体系：近纯黑底、极细灰阶分层、
+     彩色只作为小面积语义点缀。主按钮用白色实心而不是彩色渐变。 */
+  :root{
+    --bg:#09090b;
+    --card:#101013;
+    --card-2:#131316;
+    --elev:#18181b;
+    --line:#1e1e22;
+    --line-hi:#2d2d34;
+    --fg:#f4f4f5;
+    --dim:#a1a1aa;
+    --dim-2:#6b6b74;
+    --white:#fafafa;
+    --green:#4ade80;
+    --red:#f87171;
+    --amber:#fbbf24;
+    --blue:#7aa2f7;
+    --violet:#a78bfa;
+    --radius:14px;
+    --mono:ui-monospace,"SF Mono",Consolas,"Cascadia Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--fg);
+    font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* 顶部一层极淡的白光，只为让纯黑不那么死板，不带任何色相 */
+  body::before{
+    content:"";position:fixed;inset:0 0 auto 0;height:300px;pointer-events:none;
+    background:radial-gradient(780px 200px at 50% -12%,rgba(255,255,255,.05),transparent 72%);
+  }
+
+  /* ---------- header ---------- */
+  header{
+    position:relative;z-index:1;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:16px 34px;border-bottom:1px solid var(--line);
+    background:rgba(9,9,11,.82);backdrop-filter:blur(16px);
+  }
+  .logo{display:flex;align-items:center;gap:10px;margin-right:8px}
+  .logo .mark{
+    width:28px;height:28px;border-radius:8px;flex:0 0 auto;
+    object-fit:cover;display:block;
+    box-shadow:0 0 0 1px rgba(255,255,255,.12),0 2px 10px rgba(220,38,38,.2);
+  }
+  h1{font-size:14.5px;margin:0;font-weight:600;letter-spacing:.2px}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:3px 10px;border-radius:999px;font-size:12px;line-height:1.6;
+    border:1px solid var(--line);color:var(--dim);background:var(--card-2);
+    white-space:nowrap;
+  }
+  .badge::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--dim-2)}
+  .badge.ok{color:#86efac;border-color:rgba(74,222,128,.24);background:rgba(74,222,128,.07)}
+  .badge.ok::before{background:var(--green)}
+  .badge.bad{color:#fca5a5;border-color:rgba(248,113,113,.24);background:rgba(248,113,113,.07)}
+  .badge.bad::before{background:var(--red)}
+  .badge.live{color:#fcd34d;border-color:rgba(251,191,36,.26);background:rgba(251,191,36,.08)}
+  .badge.live::before{background:var(--amber);animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* ---------- layout ---------- */
+  main{
+    position:relative;z-index:1;
+    max-width:2000px;margin:0 auto;padding:24px 34px 64px;
+    display:flex;flex-direction:column;gap:16px;
+  }
+  .cols{display:grid;gap:16px;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);align-items:start}
+  .stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+  @media (max-width:1100px){.cols{grid-template-columns:1fr}}
+
+  /* ---------- card ---------- */
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px 22px;transition:border-color .2s ease;
+  }
+  .card:hover{border-color:var(--line-hi)}
+  .card h2{
+    display:flex;align-items:center;gap:9px;
+    font-size:11.5px;margin:0 0 16px;color:var(--dim-2);
+    letter-spacing:.9px;font-weight:600;
+  }
+  .card h2::before{content:"";width:2px;height:11px;border-radius:1px;
+                   background:var(--line-hi);flex:0 0 auto}
+  .card h2 .hint{margin-left:auto;letter-spacing:0;font-size:11.5px;
+                 color:var(--dim-2);font-weight:400;font-family:var(--mono)}
+
+  /* ---------- controls ---------- */
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+  button{
+    font-family:inherit;font-size:12.5px;cursor:pointer;
+    padding:7px 15px;border-radius:8px;color:var(--fg);
+    border:1px solid var(--line);background:var(--card-2);
+    transition:background .15s,border-color .15s,color .15s;
+  }
+  button:hover:not(:disabled){background:var(--elev);border-color:var(--line-hi)}
+  button:disabled{opacity:.38;cursor:not-allowed}
+  button.primary{
+    background:var(--white);color:#09090b;font-weight:600;border-color:transparent;
+  }
+  button.primary:hover:not(:disabled){background:#d4d4d8}
+
+  .note{margin:14px 0 0;font-size:12.5px;line-height:1.8;color:var(--dim-2)}
+  .note code{font-family:var(--mono);font-size:11.5px;color:var(--dim);
+             background:#16161a;border:1px solid var(--line);
+             padding:1px 6px;border-radius:5px}
+
+  /* ---------- progress ---------- */
+  .progress-wrap{
+    margin-top:16px;padding:14px 16px;border-radius:12px;
+    background:#0d0d10;border:1px solid var(--line);
+  }
+  .progress-head{display:flex;align-items:center;gap:10px;font-size:13.5px}
+  .progress-head .now{font-weight:600;color:var(--fg)}
+  .progress-head .meta{margin-left:auto;color:var(--dim-2);font-size:12px;
+                       font-variant-numeric:tabular-nums;font-family:var(--mono)}
+  .spinner{width:12px;height:12px;border:2px solid var(--line-hi);
+           border-top-color:var(--blue);border-radius:50%;
+           animation:spin .7s linear infinite;flex:0 0 auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bar-track{height:5px;margin-top:12px;border-radius:3px;background:#1a1a1f;overflow:hidden}
+  .bar-fill{height:100%;width:0;border-radius:3px;background:var(--blue);
+            transition:width .45s cubic-bezier(.4,0,.2,1)}
+  .progress-log{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;font-size:12px}
+
+  /* ---------- chips ---------- */
+  .chip{padding:2px 9px;border-radius:6px;border:1px solid var(--line);
+        color:var(--dim-2);background:transparent;white-space:nowrap}
+  .chip.ok{color:#86efac;border-color:rgba(74,222,128,.2);background:rgba(74,222,128,.06)}
+  .chip.bad{color:#fca5a5;border-color:rgba(248,113,113,.2);background:rgba(248,113,113,.06)}
+
+  /* ---------- task results ---------- */
+  .tasks{display:flex;flex-direction:column}
+  .task{display:flex;gap:12px;padding:12px 0;border-top:1px solid #16161a}
+  .task:first-child{border-top:none;padding-top:2px}
+  .task .rail{width:2px;border-radius:2px;flex:0 0 auto;margin:4px 0;background:var(--line-hi)}
+  .r-done{background:var(--green)!important}
+  .r-partial{background:var(--amber)!important}
+  .r-skipped{background:#3f3f46!important}
+  .r-unsupported{background:var(--violet)!important}
+  .r-failed{background:var(--red)!important}
+  .task .body{flex:1;min-width:0}
+  .task .title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .task .name{font-weight:600;font-size:13.5px}
+  .task .state{font-size:11px;padding:1px 8px;border-radius:5px;
+               border:1px solid var(--line);color:var(--dim-2)}
+  .st-done{color:#86efac;border-color:rgba(74,222,128,.2);background:rgba(74,222,128,.06)}
+  .st-partial{color:#fcd34d;border-color:rgba(251,191,36,.2);background:rgba(251,191,36,.06)}
+  .st-failed{color:#fca5a5;border-color:rgba(248,113,113,.2);background:rgba(248,113,113,.06)}
+  .st-unsupported{color:#c4b5fd;border-color:rgba(167,139,250,.2);background:rgba(167,139,250,.06)}
+  .task .detail{margin-top:4px;font-size:12.5px;color:var(--dim);line-height:1.65}
+  .task .samples{margin-top:7px;font-size:11.5px;font-family:var(--mono);color:var(--dim-2);
+                 display:flex;flex-wrap:wrap;gap:4px 12px}
+
+  /* ---------- key-value / tables ---------- */
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:11px 18px;font-size:12.5px;margin:0}
+  .kv dt{color:var(--dim-2)}
+  .kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+  .kv dd.mono{font-family:var(--mono);font-size:11.5px;color:var(--dim);word-break:break-all}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;color:var(--dim-2);font-weight:600;font-size:10.5px;
+     letter-spacing:.7px;padding:0 10px 9px 0;border-bottom:1px solid var(--line)}
+  td{padding:7px 10px 7px 0;border-bottom:1px solid #16161a;
+     vertical-align:middle;color:var(--fg)}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:rgba(255,255,255,.022)}
+  td.mono{font-family:var(--mono);font-size:11.5px;color:var(--dim);
+          white-space:nowrap;font-variant-numeric:tabular-nums}
+  .tick{color:#86efac} .cross{color:#fca5a5}
+  .endpoint{font-family:var(--mono);font-size:11.5px;color:var(--dim);
+            background:var(--card-2);padding:2px 7px;border-radius:6px;
+            border:1px solid var(--line);white-space:nowrap}
+  .endpoint.miss{color:var(--dim-2);opacity:.7}
+
+  /* ---------- meter ---------- */
+  .meter{margin-top:15px}
+  .meter:first-of-type{margin-top:4px}
+  .meter .top{display:flex;justify-content:space-between;align-items:baseline;
+              font-size:12.5px;margin-bottom:7px}
+  .meter .top .lab{color:var(--dim-2)}
+  .meter .top .val{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--dim)}
+  .meter .top .val b{color:var(--fg);font-size:14px;font-weight:600}
+  .meter .trk{height:4px;border-radius:3px;background:#1a1a1f;overflow:hidden}
+  .meter .fil{height:100%;border-radius:3px;transition:width .5s ease}
+  /* 进度条统一走中性灰：三条满格彩色条会把视觉重心从数字上抢走，
+     信息由标签和数值承担就够了。 */
+  .m-blue,.m-green,.m-purple{background:#a1a1aa}
+
+  /* ---------- misc ---------- */
+  .empty{padding:26px 4px;text-align:center;color:var(--dim-2);font-size:12.5px}
+  textarea{width:100%;min-height:84px;background:#0d0d10;color:var(--fg);
+           border:1px solid var(--line);border-radius:10px;padding:12px;
+           font:12px/1.65 var(--mono);resize:vertical;transition:border-color .16s}
+  textarea::placeholder{color:#4b4b53}
+  textarea:focus{outline:none;border-color:var(--line-hi);background:#101014}
+  .muted{color:var(--dim-2);font-size:12.5px}
+  .mono{font-family:var(--mono);font-size:12px}
+
+  #toast{
+    position:fixed;right:26px;bottom:26px;z-index:50;max-width:400px;
+    padding:12px 17px;border-radius:10px;font-size:12.5px;
+    background:#17171b;border:1px solid var(--line-hi);
+    box-shadow:0 14px 40px rgba(0,0,0,.6);
+    opacity:0;transform:translateY(10px);transition:.26s cubic-bezier(.4,0,.2,1);
+    pointer-events:none;
+  }
+  #toast.show{opacity:1;transform:translateY(0)}
+  #toast.bad{border-color:rgba(248,113,113,.4)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <img class="mark" src="/logo.png" alt="">
+    <h1>绯狐C站日常任务</h1>
+  </div>
+  <span class="badge" id="siteBadge">站点 …</span>
+  <span class="badge" id="cookieBadge">Cookie …</span>
+  <span class="badge" id="modeBadge">空闲</span>
+</header>
+
+<main>
+  <section class="card">
+    <h2>执行</h2>
+    <div class="row">
+      <button class="primary" id="btnRun">一键执行全部任务</button>
+      <button id="btnProbe">端点探活</button>
+      <button id="btnRefresh">刷新</button>
+      <button id="btnReset">清空结果</button>
+    </div>
+    <div id="progressWrap" class="progress-wrap" style="display:none">
+      <div class="progress-head">
+        <span class="spinner"></span>
+        <span class="now" id="progressLabel">执行中…</span>
+        <span class="meta" id="progressMeta"></span>
+      </div>
+      <div class="bar-track"><div id="progressBar" class="bar-fill"></div></div>
+      <div id="progressLog" class="progress-log"></div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <div class="stack">
+      <section class="card">
+        <h2>本次结果 <span class="hint" id="resultHint"></span></h2>
+        <div id="results"><div class="empty">还没有执行记录</div></div>
+      </section>
+      <section class="card">
+        <h2>端点探活详情</h2>
+        <div id="probeOut"><div class="empty">点击上方「端点探活」，这里会列出每个候选端点的真实可用性</div></div>
+      </section>
+    </div>
+
+    <div class="stack">
+      <section class="card">
+        <h2>环境与限额</h2>
+        <dl class="kv" id="env"></dl>
+      </section>
+      <section class="card">
+        <h2>今日进度</h2>
+        <div id="today"><div class="empty">暂无数据</div></div>
+      </section>
+      <section class="card">
+        <h2>已命中端点 <span class="hint" id="hitsHint"></span></h2>
+        <div id="hits"><div class="empty">尚未命中</div></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>历史运行 <span class="hint">最近 10 次</span></h2>
+    <div id="runs"><div class="empty">暂无记录</div></div>
+  </section>
+
+  <section class="card">
+    <h2>Cookie 配置</h2>
+    <p class="note" style="margin:0 0 13px">
+      从开发者工具的 <code>Network → Request Headers → Cookie</code> 复制整串粘进来
+      （<code>__Secure-next-auth.session-token</code> 是 HttpOnly，控制台读不到）。
+      也可以用 <code>civitai-daily login</code> 自动抓取。
+    </p>
+    <textarea id="cookieBox" placeholder="__Secure-next-auth.session-token=...; cf_clearance=..."></textarea>
+    <div class="row" style="margin-top:13px">
+      <button class="primary" id="btnCookie">保存 Cookie</button>
+      <span class="muted" id="cookieHint"></span>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let pollTimer = null;
+
+function toast(msg, bad){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = bad ? 'show bad' : 'show';
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>t.className='', 4200);
+}
+
+const STATUS_LABEL = {done:'完成', partial:'部分完成', skipped:'跳过',
+                      unsupported:'站点不支持', failed:'失败'};
+
+function esc(s){
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function elapsedSec(started){
+  if(!started) return 0;
+  const t = new Date(String(started).replace(' ','T')).getTime();
+  return isNaN(t) ? 0 : Math.max(0, Math.round((Date.now()-t)/1000));
+}
+
+// 一轮全任务要跑几十秒到几分钟，没有这块进度反馈时界面看着就像死掉了
+function renderProgress(run){
+  const wrap = $('#progressWrap');
+  if(!run || !run.running){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  const total = run.total || 0, idx = run.index || 0;
+  $('#progressLabel').textContent = run.progress || '执行中…';
+  $('#progressMeta').textContent =
+      `${idx} / ${total} 项 · 已用 ${elapsedSec(run.started_at)} 秒`;
+  $('#progressBar').style.width =
+      total ? Math.max(3, ((idx - 1) / total) * 100).toFixed(1) + '%' : '4%';
+  const log = (run.task_log || []).map(t => {
+    const cls = t.status === 'done' ? 'ok' : (t.status === 'failed' ? 'bad' : '');
+    return `<span class="chip ${cls}">${esc(t.label)} · ${STATUS_LABEL[t.status] || t.status}</span>`;
+  }).join('');
+  $('#progressLog').innerHTML = log || '<span class="muted">正在执行第一个任务…</span>';
+}
+
+function renderResults(run){
+  const box = $('#results');
+  const hint = $('#resultHint');
+  hint.textContent = '';
+
+  if(run && run.running){
+    box.innerHTML = '<div class="empty">执行中，完成后这里会显示逐条结果</div>';
+    return;
+  }
+  if(!run || !run.report){
+    box.innerHTML = '<div class="empty">还没有执行记录</div>';
+    return;
+  }
+  const rep = run.report;
+  hint.textContent = `${rep.dry_run ? 'dry-run' : 'LIVE'} · ${rep.duration_s}s`;
+
+  let html = `<div class="muted" style="margin:-6px 0 12px">${esc(rep.started_at)} → ${esc(rep.finished_at)}</div><div class="tasks">`;
+  for(const o of rep.outcomes){
+    const samples = (o.samples && o.samples.length)
+      ? `<div class="samples">${o.samples.map(esc).join(' · ')}</div>` : '';
+    html += `<div class="task">
+      <div class="rail r-${o.status}"></div>
+      <div class="body">
+        <div class="title">
+          <span class="name">${esc(o.label)}</span>
+          <span class="state st-${o.status}">${STATUS_LABEL[o.status] || o.status}</span>
+        </div>
+        <div class="detail">${esc(o.detail)}</div>
+        ${samples}
+      </div></div>`;
+  }
+  html += '</div>';
+  if(rep.stopped_reason) html += `<p class="muted" style="margin:12px 0 0">${esc(rep.stopped_reason)}</p>`;
+  box.innerHTML = html;
+}
+
+function meter(label, cur, max, cls){
+  const pct = max > 0 ? Math.min(100, (cur / max) * 100) : 0;
+  return `<div class="meter">
+    <div class="top"><span class="lab">${label}</span>
+      <span class="val"><b>${cur}</b> / ${max}</span></div>
+    <div class="trk"><div class="fil ${cls}" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+function renderEnv(s){
+  $('#siteBadge').textContent = s.site;
+  const cb = $('#cookieBadge');
+  cb.textContent = s.has_cookie ? 'Cookie 已配置' : 'Cookie 未配置';
+  cb.className = 'badge ' + (s.has_cookie ? 'ok' : 'bad');
+
+  const L = s.limits;
+  $('#env').innerHTML = `
+    <dt>数据目录</dt><dd class="mono">${esc(s.data_dir)}</dd>
+    <dt>请求间隔</dt><dd>${L.min_delay} – ${L.max_delay} s</dd>
+    <dt>点赞 / 关注 / 浏览</dt><dd>${L.max_likes} / ${L.max_follows} / ${L.max_browses}</dd>
+    <dt>dry-run 浏览</dt><dd>${L.dry_run_browses}</dd>
+    <dt>时间预算</dt><dd>${L.max_runtime_seconds} s</dd>`;
+
+  const hits = s.endpoint_hits || {};
+  const keys = Object.keys(hits);
+  $('#hitsHint').textContent = keys.length ? keys.length + ' 个' : '';
+  $('#hits').innerHTML = keys.length
+    ? `<table><tbody>${keys.map(k=>`<tr><td style="color:var(--dim-2);font-size:12px">${esc(k)}</td>
+        <td style="text-align:right"><span class="endpoint">${esc(hits[k])}</span></td></tr>`).join('')}</tbody></table>`
+    : '<div class="empty">尚未命中</div>';
+
+  const days = s.days || {};
+  const dk = Object.keys(days).sort();
+  if(dk.length){
+    const d = days[dk[dk.length-1]];
+    const n = k => (d[k]||[]).length;
+    $('#today').innerHTML =
+      `<div class="muted" style="margin:-6px 0 2px">任务日 ${esc(dk[dk.length-1])}　${
+        d.daily_reward_claimed ? '<span class="tick">每日奖励已处理</span>' : '每日奖励未处理'}</div>`
+      + meter('点赞', n('liked'), L.max_likes, 'm-blue')
+      + meter('关注', n('followed'), L.max_follows, 'm-green')
+      + meter('浏览', n('browsed'), L.max_browses, 'm-purple');
+  }
+}
+
+function setRunning(running, run){
+  const b = $('#modeBadge');
+  if(running){ b.textContent = '执行中'; b.className = 'badge live'; }
+  else { b.textContent = '空闲'; b.className = 'badge'; }
+  $('#btnRun').disabled = running;
+  $('#btnProbe').disabled = running;
+  renderProgress(run);
+}
+
+async function refresh(){
+  try{
+    const s = await (await fetch('/api/status')).json();
+    renderEnv(s);
+    renderResults(s.run);
+    setRunning(s.run && s.run.running, s.run);
+    if(s.run && s.run.error) toast('执行出错: ' + s.run.error, true);
+    if(s.run && s.run.running && !pollTimer){
+      pollTimer = setInterval(refresh, 1500);
+    }
+    if(!(s.run && s.run.running) && pollTimer){
+      clearInterval(pollTimer); pollTimer = null;
+      loadRuns();
+    }
+  }catch(e){ toast('读取状态失败: ' + e, true); }
+}
+
+async function loadRuns(){
+  try{
+    const rs = await (await fetch('/api/runs?limit=10')).json();
+    if(!rs.length){ $('#runs').innerHTML = '<div class="empty">暂无记录</div>'; return; }
+    $('#runs').innerHTML = `<table><thead><tr>
+        <th style="width:190px">完成时间</th><th style="width:90px">模式</th><th>结果</th>
+      </tr></thead><tbody>${rs.slice().reverse().map(r=>{
+        const c = {}; (r.outcomes||[]).forEach(o=>c[o.status]=(c[o.status]||0)+1);
+        const chips = Object.entries(c).map(([k,v])=>
+          `<span class="chip ${k==='done'?'ok':(k==='failed'?'bad':'')}">${
+            STATUS_LABEL[k]||k} ${v}</span>`).join(' ');
+        return `<tr>
+          <td class="mono">${esc(r.finished_at||'?')}</td>
+          <td><span class="chip ${r.dry_run?'':'bad'}">${r.dry_run?'dry-run':'LIVE'}</span></td>
+          <td>${chips}</td></tr>`;
+      }).join('')}</tbody></table>`;
+  }catch(e){ /* 忽略 */ }
+}
+
+$('#btnRun').onclick = async () => {
+  // 面板不提供演练模式，点下去就是真实执行；社交痕迹不可逆，值一次确认
+  if(!confirm('会真实领取 Buzz、点赞图片、关注创作者，确定继续？')) return;
+  try{
+    const r = await fetch('/api/run', {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({live: true})});
+    if(!r.ok){ toast('启动失败: ' + (await r.json()).detail, true); return; }
+    toast('已启动执行');
+    const now = new Date();
+    setRunning(true, {
+      running: true, progress: '准备中', index: 0, total: 0,
+      started_at: now.toISOString().slice(0, 19).replace('T', ' '),
+      task_log: []
+    });
+    if(!pollTimer) pollTimer = setInterval(refresh, 1500);
+  }catch(e){ toast('启动失败: ' + e, true); }
+};
+
+$('#btnProbe').onclick = async () => {
+  $('#probeOut').innerHTML = '<div class="empty">探活中…</div>';
+  try{
+    const r = await (await fetch('/api/probe')).json();
+    $('#probeOut').innerHTML = `<table><thead><tr>
+        <th style="width:150px">动作</th><th style="width:300px">候选端点</th><th>结果</th>
+      </tr></thead><tbody>${r.rows.map(x=>{
+        const good = x.result.startsWith('OK');
+        const miss = x.result.startsWith('MISSING') || x.result.startsWith('SKIP');
+        return `<tr>
+          <td style="color:var(--dim-2);font-size:12px">${esc(x.action)}</td>
+          <td><span class="endpoint ${miss?'miss':''}">${esc(x.endpoint)}</span></td>
+          <td class="${good?'tick':(miss?'muted':'')}">${esc(x.result)}</td></tr>`;
+      }).join('')}</tbody></table>`;
+  }catch(e){ $('#probeOut').innerHTML = `<div class="empty cross">探活失败: ${esc(e)}</div>`; }
+};
+
+$('#btnRefresh').onclick = () => { refresh(); loadRuns(); toast('已刷新'); };
+$('#btnReset').onclick = async () => {
+  await fetch('/api/run/reset', {method:'POST'});
+  toast('已清空本次结果'); refresh();
+};
+
+$('#btnCookie').onclick = async () => {
+  const cookie = $('#cookieBox').value.trim();
+  if(!cookie){ toast('Cookie 为空', true); return; }
+  const r = await fetch('/api/cookie', {method:'POST',
+    headers:{'Content-Type':'application/json'}, body: JSON.stringify({cookie})});
+  if(r.ok){ toast('Cookie 已保存'); $('#cookieBox').value=''; refresh(); }
+  else toast('保存失败', true);
+};
+
+refresh(); loadRuns();
+</script>
+</body>
+</html>

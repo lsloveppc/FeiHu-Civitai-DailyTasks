@@ -1,0 +1,22 @@
+# 运行期数据目录：里面有 Cookie、个人点赞/关注记录，绝对不能提交
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# 本地验证产物（截图、探活留档）
+_verify/
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store
