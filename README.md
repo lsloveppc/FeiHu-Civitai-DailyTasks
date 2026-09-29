@@ -4,7 +4,7 @@
 > 交流群（能工智人）：**756754216**
 
 给 [civitai.red](https://civitai.red)（Civitai 官方备用主域名，与 civitai.com 后端同源）做的一键每日任务执行器。
-形态对标 [workbuddy2api-panel](https://github.com/linguo2625469/workbuddy2api-panel)：**Python CLI + Web 管理面板**，账号池可视化改成单账号视图，任务中心全自动改成 Buzz 活跃度全自动。
+形态是 **Python CLI + Web 管理面板**：单账号视图，把 Buzz 活跃度这块做全自动。
 
 包名与命令名保持 `civitai_daily` / `civitai-daily`（换掉会破坏已安装的入口点），界面与文档统一显示为「绯狐C站日常任务」。
 
@@ -189,12 +189,6 @@ Civitai 官方发过专文处理站内 Buzz 的机器人刷取问题（[Buzz cha
 
 ![主界面](screenshots/01-overview.png)
 
-配色参考 [shadcn/ui](https://ui.shadcn.com) 与 [Linear](https://linear.app) 的深色体系，做法是
-实际打开这两个站截图比对后定的：**近纯黑底（`#09090b`）、靠极细的灰阶分层、主按钮白色实心**，
-彩色只作为小面积语义点缀（状态点、任务标记、进度填充）。
-
-刻意避开了彩色渐变、大面积高饱和、发光阴影——这些是"廉价感"的主要来源。第一版就是满屏蓝紫渐变
-配蓝调边框，对比参考之后整体换成了中性色阶。
 
 ### 执行中的实时进度
 
