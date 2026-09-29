@@ -6,8 +6,8 @@
 <title>绯狐C站日常任务</title>
 <link rel="icon" href="/favicon.png">
 <style>
-  /* 深色配色：近纯黑底、极细灰阶分层、彩色只作小面积语义点缀；
-     主按钮用白色实心，不用彩色渐变。 */
+  /* 配色参考 shadcn/ui 与 Linear 的深色体系：近纯黑底、极细灰阶分层、
+     彩色只作为小面积语义点缀。主按钮用白色实心而不是彩色渐变。 */
   :root{
     --bg:#09090b;
     --card:#101013;
@@ -53,6 +53,21 @@
     box-shadow:0 0 0 1px rgba(255,255,255,.12),0 2px 10px rgba(220,38,38,.2);
   }
   h1{font-size:14.5px;margin:0;font-weight:600;letter-spacing:.2px}
+
+  /* 交流群 + 免费声明，靠右；窄屏自动换行 */
+  .notice{margin-left:auto;display:flex;align-items:center;gap:12px;
+          flex-wrap:wrap;justify-content:flex-end}
+  .qq{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:3px 11px;border-radius:999px;font-size:12px;font-family:inherit;
+    color:#a5d6ff;background:rgba(122,162,247,.09);
+    border:1px solid rgba(122,162,247,.28);cursor:pointer;
+    transition:background .16s,border-color .16s;
+  }
+  .qq:hover{background:rgba(122,162,247,.17);border-color:rgba(122,162,247,.48)}
+  .qq::before{content:"";width:5px;height:5px;border-radius:50%;flex:0 0 auto;
+              background:#7aa2f7;box-shadow:0 0 7px rgba(122,162,247,.9)}
+  .free{font-size:11.5px;color:#b4934e;letter-spacing:.1px}
 
   .badge{
     display:inline-flex;align-items:center;gap:6px;
@@ -229,6 +244,10 @@
   <span class="badge" id="siteBadge">站点 …</span>
   <span class="badge" id="cookieBadge">Cookie …</span>
   <span class="badge" id="modeBadge">空闲</span>
+  <div class="notice">
+    <button class="qq" id="qqBadge" title="点击复制群号">能工智人交流群 756754216</button>
+    <span class="free">本软件免费使用 · 如为付费购买请立即退款并举报倒卖</span>
+  </div>
 </header>
 
 <main>
@@ -519,6 +538,17 @@ $('#btnCookie').onclick = async () => {
     headers:{'Content-Type':'application/json'}, body: JSON.stringify({cookie})});
   if(r.ok){ toast('Cookie 已保存'); $('#cookieBox').value=''; refresh(); }
   else toast('保存失败', true);
+};
+
+$('#qqBadge').onclick = async () => {
+  const qq = '756754216';
+  try{
+    await navigator.clipboard.writeText(qq);
+    toast('群号 ' + qq + ' 已复制');
+  }catch(e){
+    // 非 https 或没有剪贴板权限时，退化成直接把群号显示出来
+    toast('能工智人交流群：' + qq);
+  }
 };
 
 refresh(); loadRuns();

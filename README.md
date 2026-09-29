@@ -1,6 +1,10 @@
 # 绯狐C站日常任务
 
-给 [civitai.red](https://civitai.red)（Civitai 官方备用主域名，与 civitai.com 后端同源）做的一键每日任务执行器。形态是 **Python CLI + Web 管理面板**：单账号视图，把 Buzz 活跃度这块做全自动。
+> **本软件免费使用。** 如为付费购买，请立即退款并举报倒卖。
+> 交流群（能工智人）：**756754216**
+
+给 [civitai.red](https://civitai.red)（Civitai 官方备用主域名，与 civitai.com 后端同源）做的一键每日任务执行器。
+形态对标 [workbuddy2api-panel](https://github.com/linguo2625469/workbuddy2api-panel)：**Python CLI + Web 管理面板**，账号池可视化改成单账号视图，任务中心全自动改成 Buzz 活跃度全自动。
 
 包名与命令名保持 `civitai_daily` / `civitai-daily`（换掉会破坏已安装的入口点），界面与文档统一显示为「绯狐C站日常任务」。
 
@@ -26,15 +30,20 @@ Civitai 没有「签到」这个按钮。免费 Buzz 叫 **Blue Buzz**，来源�
 
 ## 快速开始
 
+Windows 上**双击 `启动面板.bat`** 即可 —— 它会自动找 Python、缺依赖自动装、端口被占自动顺延、
+起来后自动打开浏览器。关掉那个窗口就是停止服务。
+
+想用命令行的话：
+
 ```bash
 cd civitai-daily
 pip install -r requirements.txt
-python -m civitai_daily.cli init          # 生成 data/config.yaml
+python -m civitai_daily.cli init          # 生成 data/config.yaml（可选）
 python -m civitai_daily.cli login         # 打开浏览器登录，自动抓 Cookie（详见下节）
 
 python -m civitai_daily.cli run           # dry-run：只校验，不改动任何站点状态
 python -m civitai_daily.cli run --live    # 真正执行领取 / 点赞 / 关注
-python -m civitai_daily.cli serve         # 起 Web 面板 http://127.0.0.1:8787
+python -m civitai_daily.cli launch        # 起面板 + 自动开浏览器（自动挑端口）
 ```
 
 装成命令后可以直接 `civitai-daily run --live`。
@@ -180,6 +189,13 @@ Civitai 官方发过专文处理站内 Buzz 的机器人刷取问题（[Buzz cha
 
 ![主界面](screenshots/01-overview.png)
 
+配色参考 [shadcn/ui](https://ui.shadcn.com) 与 [Linear](https://linear.app) 的深色体系，做法是
+实际打开这两个站截图比对后定的：**近纯黑底（`#09090b`）、靠极细的灰阶分层、主按钮白色实心**，
+彩色只作为小面积语义点缀（状态点、任务标记、进度填充）。
+
+刻意避开了彩色渐变、大面积高饱和、发光阴影——这些是"廉价感"的主要来源。第一版就是满屏蓝紫渐变
+配蓝调边框，对比参考之后整体换成了中性色阶。
+
 ### 执行中的实时进度
 
 一轮全任务要跑几十秒到几分钟，所以执行期间会显示当前任务、`3/5` 这样的子计数、已完成几项、
@@ -196,6 +212,8 @@ Civitai 官方发过专文处理站内 Buzz 的机器人刷取问题（[Buzz cha
 - `MISSING 404 No procedure found` —— 这个 procedure 真的不存在
 
 ![端点探活](screenshots/03-probe.png)
+
+截图用 `scripts/capture_screens.py` 生成（Playwright 驱动，因为要真实点击按钮才能截到上面两个状态）。
 
 ---
 
@@ -304,6 +322,50 @@ json 直接解析失败。后果不只是命中表丢 —— `reacted_ids` 去�
 | `data/cookies.txt` | 会话 Cookie，单独存放，不建议提交到任何仓库 |
 | `data/state.json` | 已命中端点、点赞去重表、每日进度 |
 | `data/runs.jsonl` | 历次运行报告，一行一轮，面板的历史区就是读它 |
+
+---
+
+## 打包发布
+
+```bash
+python scripts/build_release.py              # 输出到桌面
+python scripts/build_release.py D:\outdir    # 指定输出目录
+```
+
+生成 `绯狐C站日常任务-V<版本>.zip`。脚本会**自动排除 `data/`（里面有 Cookie 与个人操作记录）**、
+`__pycache__`、本地验证产物和体积大却未被代码引用的原始素材，并在打包后做一次内容校验 ——
+混进凭据或临时产物会直接报错退出，不会把半成品放出去。
+
+版本号从 `civitai_daily/__init__.py` 的 `__version__` 读取，改一处即可。
+
+---
+
+## 目录结构
+
+```
+civitai-daily/
+├── civitai_daily/
+│   ├── cli.py          # Typer 命令行（init/login/cookie/probe/status/run/undo/serve）
+│   ├── config.py       # 配置与数据读写，含 BOM 容错与数据目录解析
+│   ├── endpoints.py    # 端点候选链（站点改了接口只改这里）
+│   ├── client.py       # tRPC v10 batch + devalue 解码 + 限速 + 写操作保护
+│   ├── tasks.py        # 各每日任务的实现
+│   ├── runner.py       # 编排、时间预算、进度回调、报告落盘
+│   ├── undo.py         # 撤回本工具造成的点赞 / 关注
+│   └── web/
+│       ├── app.py          # FastAPI 面板后端
+│       └── static/
+│           ├── index.html  # 单页控制台
+│           ├── logo.png    # 页头图标 256×256
+│           └── favicon.png # 浏览器标签图标 64×64
+├── scripts/build_release.py  # 打包脚本（含凭据检查）
+├── 使用说明.md          # 面向使用者的操作手册
+├── LICENSE              # MIT
+├── .gitignore           # 已排除 data/，Cookie 不会进仓库
+├── config.example.yaml
+├── requirements.txt
+└── pyproject.toml
+```
 
 ---
 

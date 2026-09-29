@@ -23,7 +23,7 @@ EXCLUDE_DIRS = {"__pycache__", "data", "_verify", ".git", ".venv", "venv",
 EXCLUDE_SUFFIX = {".pyc", ".pyo", ".broken"}
 # logo-full.png 是原始素材，代码只用缩放后的 logo.png / favicon.png
 EXCLUDE_FILES = {"logo-full.png"}
-TOP_FILES = ["README.md", "使用说明.md", "LICENSE", ".gitignore",
+TOP_FILES = ["启动面板.bat", "README.md", "使用说明.md", "LICENSE", ".gitignore",
              "config.example.yaml", "requirements.txt", "pyproject.toml"]
 
 
@@ -46,11 +46,16 @@ def default_out_dir() -> Path:
 def build(out_dir: Path) -> Path:
     root = f"绯狐C站日常任务-V{version()}"
     out = out_dir / f"{root}.zip"
-    if out.exists():
-        out.unlink()
+    tmp = out_dir / f"{root}.zip.tmp"
+
+    # 目标文件常被资源管理器预览窗格或杀毒软件占着，此时直接 unlink 会
+    # WinError 5（拒绝访问），而且重试多少次都没用。所以先写临时文件，
+    # 再把旧文件改名挪开（改名比删除容易成功），最后落位。
+    if tmp.exists():
+        tmp.unlink()
 
     count = 0
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+    with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
         for sub in (PKG, "scripts", "screenshots"):
             for p in sorted((ROOT / sub).rglob("*")):
                 if p.is_dir() or p.name in EXCLUDE_FILES:
@@ -66,6 +71,26 @@ def build(out_dir: Path) -> Path:
             if f.exists():
                 z.write(f, f"{root}/{name}")
                 count += 1
+
+    if out.exists():
+        bak = out.with_name(out.name + ".old")
+        if bak.exists():
+            bak.unlink()
+        try:
+            out.rename(bak)
+        except OSError as exc:
+            tmp.unlink(missing_ok=True)
+            raise SystemExit(
+                f"旧包被占用，无法替换：{exc}\n"
+                f"请关掉资源管理器预览窗格 / 退出占用该文件的程序后重试。") from exc
+        tmp.replace(out)
+        try:
+            bak.unlink()
+        except OSError:
+            print(f"（旧包留在 {bak.name}，可手动删除）")
+    else:
+        tmp.replace(out)
+
     print(f"打包完成: {out}")
     print(f"文件数 {count}  体积 {out.stat().st_size / 1024:.1f}KB")
     return out

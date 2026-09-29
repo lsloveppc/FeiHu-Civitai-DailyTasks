@@ -173,7 +173,12 @@ def cookie(
         mark = " [green]<- 登录态[/green]" if n in SESSION_COOKIE_NAMES else ""
         console.print(f"  · {n}{mark}")
     has_cf = any(n == "cf_clearance" for n in names)
-    console.print(f"cf_clearance: {'有' if has_cf else '[yellow]没有（可能被 Cloudflare 拦）[/yellow]'}")
+    if has_cf:
+        console.print("cf_clearance: 有")
+    else:
+        # 实测本工具走的是 tRPC 接口，不受 Cloudflare 托管挑战影响，
+        # 缺这个 cookie 并不影响运行（它是页面导航才需要的通行证）。
+        console.print("cf_clearance: [dim]未提供（可选，tRPC 调用不需要它）[/dim]")
     if show:
         head = cfg.cookie[:120]
         console.print("\n[dim]头 120 字符：" + head + " …[/dim]")
@@ -335,6 +340,64 @@ def undo(
         console.print(f"[bold]{title}[/bold] — {r.summary()}")
         for d in r.details:
             console.print(f"    {d}")
+
+
+def _pick_port(preferred: int, span: int = 20) -> int:
+    """从 preferred 开始找一个能用的端口。
+
+    双击启动时用户不会去关心端口冲突，被占就往后顺延，别为此报错。
+    """
+    import socket
+
+    for p in range(preferred, preferred + span):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                s.bind(("127.0.0.1", p))
+                return p
+            except OSError:
+                continue
+    return preferred
+
+
+@app.command()
+def launch(
+    port: int = typer.Option(None, help="监听端口，默认取配置并在被占用时自动顺延"),
+    no_browser: bool = typer.Option(False, "--no-browser", help="不要自动打开浏览器"),
+) -> None:
+    """一键启动面板并打开浏览器（给双击启动脚本用）。
+
+    与 serve 的区别：端口被占用会自动顺延，起来之后自动打开浏览器，
+    全程不需要用户输入任何东西。
+    """
+    import threading
+    import webbrowser
+
+    import uvicorn
+
+    cfg = Config.load()
+    want = port or cfg.web.port
+    actual = _pick_port(want)
+    url = f"http://127.0.0.1:{actual}"
+
+    console.print(Panel.fit(
+        f"[bold red]绯狐C站日常任务[/] v{__version__}\n"
+        f"面板地址: [bold]{url}[/]\n"
+        f"站点: {cfg.base}   Cookie: "
+        f"{'已配置' if cfg.has_cookie else '[red]未配置（请先在面板里粘贴）[/red]'}",
+        border_style="red"))
+    if actual != want:
+        console.print(f"[yellow]端口 {want} 被占用，已改用 {actual}[/yellow]")
+    if not cfg.has_cookie:
+        console.print("[yellow]提示：还没有配置 Cookie，打开面板后先在底部粘贴一份。[/yellow]")
+
+    if not no_browser:
+        # 等 uvicorn 真正起来再打开，否则浏览器会先看到一个连接失败页
+        threading.Timer(1.8, lambda: webbrowser.open(url)).start()
+
+    console.print("\n[dim]关闭这个窗口即可停止服务。[/dim]\n")
+    uvicorn.run("civitai_daily.web.app:app", host="127.0.0.1", port=actual,
+                log_level="info")
 
 
 @app.command()
