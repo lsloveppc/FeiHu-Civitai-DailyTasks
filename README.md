@@ -197,8 +197,6 @@ Civitai 官方发过专文处理站内 Buzz 的机器人刷取问题（[Buzz cha
 
 ![端点探活](screenshots/03-probe.png)
 
-截图用 `scripts/capture_screens.py` 生成（Playwright 驱动，因为要真实点击按钮才能截到上面两个状态）。
-
 ---
 
 ## 回滚：撤销本工具造成的改动
@@ -306,50 +304,6 @@ json 直接解析失败。后果不只是命中表丢 —— `reacted_ids` 去�
 | `data/cookies.txt` | 会话 Cookie，单独存放，不建议提交到任何仓库 |
 | `data/state.json` | 已命中端点、点赞去重表、每日进度 |
 | `data/runs.jsonl` | 历次运行报告，一行一轮，面板的历史区就是读它 |
-
----
-
-## 打包发布
-
-```bash
-python scripts/build_release.py              # 输出到桌面
-python scripts/build_release.py D:\outdir    # 指定输出目录
-```
-
-生成 `绯狐C站日常任务-V<版本>.zip`。脚本会**自动排除 `data/`（里面有 Cookie 与个人操作记录）**、
-`__pycache__`、本地验证产物和体积大却未被代码引用的原始素材，并在打包后做一次内容校验 ——
-混进凭据或临时产物会直接报错退出，不会把半成品放出去。
-
-版本号从 `civitai_daily/__init__.py` 的 `__version__` 读取，改一处即可。
-
----
-
-## 目录结构
-
-```
-civitai-daily/
-├── civitai_daily/
-│   ├── cli.py          # Typer 命令行（init/login/cookie/probe/status/run/undo/serve）
-│   ├── config.py       # 配置与数据读写，含 BOM 容错与数据目录解析
-│   ├── endpoints.py    # 端点候选链（站点改了接口只改这里）
-│   ├── client.py       # tRPC v10 batch + devalue 解码 + 限速 + 写操作保护
-│   ├── tasks.py        # 各每日任务的实现
-│   ├── runner.py       # 编排、时间预算、进度回调、报告落盘
-│   ├── undo.py         # 撤回本工具造成的点赞 / 关注
-│   └── web/
-│       ├── app.py          # FastAPI 面板后端
-│       └── static/
-│           ├── index.html  # 单页控制台
-│           ├── logo.png    # 页头图标 256×256
-│           └── favicon.png # 浏览器标签图标 64×64
-├── scripts/build_release.py  # 打包脚本（含凭据检查）
-├── 使用说明.md          # 面向使用者的操作手册
-├── LICENSE              # MIT
-├── .gitignore           # 已排除 data/，Cookie 不会进仓库
-├── config.example.yaml
-├── requirements.txt
-└── pyproject.toml
-```
 
 ---
 
